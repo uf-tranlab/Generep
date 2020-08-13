@@ -8,10 +8,13 @@ export PYTHONPATH=$PYTHONPATH:${GR_HOME}/bin
 
 CONF=$1
 
-if [ -f "$CONF" ];
+if [ ! -f "$CONF" ];
 then
-  nextflow -c $CONF run $GR_HOME/generep.nf -resume
-else
   echo Usage: run.sh configfile
+  exit 1
 fi
+
+NF_CONF=$($GR_HOME/bin/make_conf.py $CONF)
+
+echo nextflow -c $NF_CONF run $GR_HOME/generep.nf -resume
 

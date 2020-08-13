@@ -36,7 +36,6 @@ process Randomize {
 process BootstrapReal {
 
 	executor "slurm"
-	clusterOptions "--account=icbrbi --qos=icbrbi"
 	time "2:00:00"
 	memory "2G"
 
@@ -57,7 +56,6 @@ process BootstrapReal {
 process Bootstrap {
 	
 	executor "slurm"
-	clusterOptions "--account=icbrbi --qos=icbrbi"
 	time "2:00:00"
 	memory "2G"
 
@@ -83,7 +81,6 @@ Channel
 process Aracne {
 
 	executor "slurm"
-	clusterOptions "--account=icbrbi --qos=icbrbi"
 	time "80:00:00"
 	memory "30G"
 
@@ -112,7 +109,6 @@ Channel
 process Consensus {
 	
 	executor "slurm"
-	clusterOptions "--account=icbrbi --qos=icbrbi"
 	time "20:00:00"
 	memory "20G"
 
@@ -163,7 +159,6 @@ genereptools.py suppfilter ${params.nrounds} "${files}"
 process FilterBySupport {
 	// Create a new consensus filtering edges by support.
 	executor "slurm"
-	clusterOptions "--account=icbrbi --qos=icbrbi"
 	time "10:00:00"
 	memory "20G"
 
@@ -217,7 +212,6 @@ genereptools.py mifilter "${allmihist}"
 process FilterByMI {
 	// Filter the consensus adj files using the optimal MI threshold
 	executor "slurm"
-	clusterOptions "--account=icbrbi --qos=icbrbi"
 	time "5:00:00"
 	memory "20G"
 
@@ -270,7 +264,6 @@ genereptools.py summifilter "${allsummihist}"
 process FilterBySumMI {
 	// Filter the consensus adj files using the optimal MI threshold
 	executor "slurm"
-	clusterOptions "--account=icbrbi --qos=icbrbi"
 	time "5:00:00"
 	memory "20G"
 
