@@ -16,5 +16,5 @@ fi
 
 NF_CONF=$($GR_HOME/bin/make_conf.py $CONF)
 
-echo nextflow -c $NF_CONF run $GR_HOME/generep.nf -resume
+nextflow -c $NF_CONF run $GR_HOME/generep.nf -resume
 

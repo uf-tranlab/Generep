@@ -93,11 +93,20 @@ process Aracne {
 	"""
 	#!/bin/bash
 	# Running aracne on $basename $boot  ${basename}.adj
-	/apps/dibig_tools/aracne/aracne2 -i ${boot} -o ${basename}.adj -l ${params.tfs} \
-        -a adaptive_partitioning \
-        -H /apps/dibig_tools/aracne/ \
-        -p ${params.pvalue} \
-	-e ${params.dpi}
+
+	# Figure out where aracne2 is
+	AR=\$(which aracne2)
+	if [ "\$?" == "0" ];
+	then
+	  ARDIR=\$(dirname \$AR)
+	  \$ARDIR/aracne2 -i ${boot} -o ${basename}.adj -l ${params.tfs} \
+          -a adaptive_partitioning \
+          -H \$ARDIR \
+	  -e ${params.dpi}
+	else
+	  echo "Error: aracne2 not found in PATH."
+	  exit 1
+	fi
 	"""
 }
 
