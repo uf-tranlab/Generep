@@ -4,11 +4,17 @@ params.resultsdir = workflow.launchDir + "/results/"
 
 shufnames = Channel.of(1..params.nshuf)
 
-process Initialize {
+process InitializeGenerep {
+
+	output:
+	file("real.csv") into realcleaned
+	file("real.csv") into realboot
 
 	"""
 	#!/bin/bash
 	mkdir -p ${params.resultsdir}
+	genereptools.py repeat ${params.expressions} real.prez.csv
+	genereptools.py zscore real.prez.csv real.csv
 	"""
 }
 
@@ -21,7 +27,7 @@ Channel
 process Randomize {
 
 	input:
-	val expressions from params.expressions
+	val real from realcleaned
 	val shuf from shufdirs
 
 	output:
@@ -29,7 +35,7 @@ process Randomize {
 
 	"""
 	#!/bin/bash
-	apple.py random -o ${shuf}.csv -gc ${params.genecols} ${expressions}
+	apple.py random -o ${shuf}.csv -gc ${params.genecols} ${real}
 	"""
 }
 
@@ -40,15 +46,14 @@ process BootstrapReal {
 	memory "2G"
 
 	input:
-	val expressions from params.expressions
+	val real from realboot
 
 	output:
 	file("real-*.csv") into realbootstraps
 
 	"""
 	#!/bin/bash
-	genereptools.py repeat ${params.expressions} real.prez.csv
-	genereptools.py zscore real.prez.csv real.csv
+	cp ${real} real.csv
 	apple.py bootstrap -gc ${params.genecols} real.csv ${params.nrounds}
 	"""
 }
@@ -67,7 +72,8 @@ process Bootstrap {
 
 	"""
 	#!/bin/bash
-	apple.py bootstrap -gc ${params.genecols} ${shuffile} ${params.nrounds}
+	cp ${shuffile} ${shuf}.csv
+	apple.py bootstrap -gc ${params.genecols} ${shuf}.csv ${params.nrounds}
 	"""
 }
 
