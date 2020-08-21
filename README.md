@@ -84,7 +84,7 @@ Generep will write its output files in the results/ subdirectory of the executio
 directory. Main output files are prefixed by the `title` variable defined in the
 configuration file. They are:
 
-* final.tr.csv - Final network in cytoscape format: Gene1, Gene2, MI, FPR, where MI is the Mutual Information of the edge between the two genes and FPR is the associated False-Positive Rate;
+* **final.tr.csv** - Final network in cytoscape format: Gene1, Gene2, MI, FPR, where MI is the Mutual Information of the edge between the two genes and FPR is the associated False-Positive Rate;
 
 * final.cx - Final network in CX format, suitable for uploading to [NDEx](https://home.ndexbio.org/index/);
 
