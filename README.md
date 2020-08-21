@@ -86,18 +86,18 @@ configuration file. They are:
 
 * **final.tr.csv** - Final network in cytoscape format: Gene1, Gene2, MI, FPR, where MI is the Mutual Information of the edge between the two genes and FPR is the associated False-Positive Rate;
 
-* final.cx - Final network in CX format, suitable for uploading to [NDEx](https://home.ndexbio.org/index/);
+* **final.cx** - Final network in CX format, suitable for uploading to [NDEx](https://home.ndexbio.org/index/);
 
-* final-tophubs.cx - Final network of top 50 genes in CX format;
+* **final-tophubs.cx** - Final network of top 50 genes in CX format;
 
-* final.conn.csv - Final network in *connections* format: Gene, number of connections, connected genes.
+* **final.conn.csv** - Final network in *connections* format: Gene, number of connections, connected genes.
 
 Other provided files:
 
-* tophubs.txt - Top 50 genes by number of connections (hubs);
+* **tophubs.txt** - Top 50 genes by number of connections (hubs);
 
-* thresholds.csv - Various threshold used in filtering;
+* **thresholds.csv** - Various threshold used in filtering;
 
-* adj-stats.csv - Summary of number of edges in real and shuffled datasets at various filtering steps.
+* **adj-stats.csv** - Summary of number of edges in real and shuffled datasets at various filtering steps.
 
 
