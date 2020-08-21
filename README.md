@@ -57,3 +57,47 @@ dpi = 0.1
 # Attributes for generation of CX files.
 (see sample.conf for the full list)
 ```
+
+## Execution
+
+To run Generep, call the `generep.sh` script with the configuration file
+as the only argument. For example:
+
+```
+$ /path/to/Generep/generep.sh sample.conf
+```
+
+Since Generep is implemented in NextFlow, you can control execution of
+the pipeline through a `nextflow.config` file. See the NextFlow documentation
+for details. For example, if you wish to run Generep on an SGE cluster, you
+can use:
+
+```
+process {
+  executor="sge"
+}
+```
+
+## Output
+
+Generep will write its output files in the results/ subdirectory of the execution
+directory. Main output files are prefixed by the `title` variable defined in the
+configuration file. They are:
+
+* final.tr.csv - Final network in cytoscape format: Gene1, Gene2, MI, FPR, where MI is the Mutual Information of the edge between the two genes and FPR is the associated False-Positive Rate;
+
+* final.cx - Final network in CX format, suitable for uploading to [NDEx](https://home.ndexbio.org/index/);
+
+* final-tophubs.cx - Final network of top 50 genes in CX format;
+
+* final.conn.csv - Final network in *connections* format: Gene, number of connections, connected genes.
+
+Other provided files:
+
+* tophubs.txt - Top 50 genes by number of connections (hubs);
+
+* thresholds.csv - Various threshold used in filtering;
+
+* adj-stats.csv - Summary of number of edges in real and shuffled datasets at various filtering steps.
+
+
