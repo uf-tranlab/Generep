@@ -127,7 +127,6 @@ process Consensus {
 	tuple val(key), file(adjs) from adjgroups
 
 	output:
-	tuple val(key), file("${key}.adj"), file("${key}.counts.csv") into origConsensus
 	file("${key}.counts.csv") into allconsensus
 
 	"""
@@ -136,18 +135,19 @@ process Consensus {
 	"""
 }
 
-Channel
+//Channel
 	// Take the adj files created by Consensus and collect them in a list, for BestSupport
-	.from allconsensus
-	.collect()
-	.set { findbestsupport }
+//	.from allconsensus
+//	.collect()
+//	.set { findbestsupport }
 
 process BestSupport {
 	
 	executor "local"
 
 	input:
-	val(files) from findbestsupport
+	file (countsfiles) from allconsensus.collect()
+//	val(files) from findbestsupport
 
 	output:
 	file("optimal-support.csv") into bestsupport
@@ -155,16 +155,12 @@ process BestSupport {
 
 	"""
 #!/bin/bash
-genereptools.py suppfilter ${params.nrounds} "${files}"
+
+# Reads the real and shuffled counts files, and generate real_vs_shuffled.support.csv
+# Also writes optimal-support.csv containing optimal support threshold
+
+genereptools.py suppfilter ${params.nrounds} *.counts.csv
 	"""
-
-
-//	"""
-// #!/usr/bin/env python
-// import genereputils
-// F = genereputils.GRFilterSupport(None)
-// F.runNF("${files}", ${params.nrounds})
-//	"""
 }
 
 process FilterBySupport {
@@ -179,45 +175,42 @@ process FilterBySupport {
 	
 	output:
 	tuple val(key), file("${key}.supp.adj") into suppadj
-	file("${key}.mi.hist.csv") into mihistogram
+	tuple file("${key}.supp.adj"), file("${key}.mihist.csv") into mihistogram
 
 	"""
 	#!/bin/bash
 	supp=`grep OptSupport ${optsupport} | cut -f 2`
-	apple.py consensus -s \$supp -c ${key}.supp.counts.csv ${key}.supp.adj ${adjs}
-	apple.py histogram -n 1000 -o ${key}.mi.hist.csv ${key}.supp.adj
+	apple.py consensus -s \$supp -c ${key}.suppcounts.csv ${key}.supp.adj ${adjs}
+	apple.py histogram -n 1000 -o ${key}.mihist.csv ${key}.supp.adj
 	cp ${key}.supp.adj ${params.resultsdir}
 	"""
 }
-
-Channel
-// Collect all *.mi.hist.csv files to determine optimal MI	
-	.from mihistogram
-	.collect()
-	.set { allmihist }
 
 process OptimalMI {
 	// Analyze MI histograms to find the optimal MI threshold
 	executor "local"
 
 	input:
-	val allmihist from allmihist
+	file (files) from mihistogram.collect()
 	
 	output:
 	file("optimal-mi.csv") into bestmi
 	file("optimal-mi.csv") into thresholds2
 
 	"""
-#!/bin/bash
-genereptools.py mifilter "${allmihist}"
-"""
+	#!/bin/bash
 
-//	"""
-// #!/usr/bin/env python
-// import genereputils
-// F = genereputils.GRFilterMI(None)
-// F.runNF("${allmihist}")
-// """
+	LIMITS=`genereptools.py limits *.mihist.csv`
+	echo Histogram limits: \$LIMITS
+	for hist in *.mihist.csv;
+	do
+	  PREFIX=\${hist%.mihist.csv}
+	  apple.py histogram -n 1000 -r \$LIMITS -o \${PREFIX}.mihist2.csv \${PREFIX}.supp.adj
+	done
+
+	# Read new histograms and find optimal MI threshold (written to optimal-mi.csv)
+	genereptools.py mifilter *.mihist2.csv
+	"""
 }
 
 process FilterByMI {
@@ -232,44 +225,45 @@ process FilterByMI {
 	
 	output:
 	tuple val(key), file("${key}.mi.adj") into filterBySumMI
-	file("${key}.summi.hist.csv") into summihistogram
+	tuple file("${key}.mi.adj"), file("${key}.summihist.csv") into summihist
 
 	"""
 	#!/bin/bash
 	mi=`grep OptMI ${optmi} | cut -f 2`
+
+	# Write MI-filtered adj and copy it to resultsdir
 	apple.py filter -o ${key}.mi.adj ${adj} \$mi
-	apple.py histogram -n 1000 -s -o ${key}.summi.hist.csv ${key}.mi.adj
 	cp ${key}.mi.adj ${params.resultsdir}
+
+	# Compute SumMI histogram, no limits
+	apple.py histogram -n 1000 -s -o ${key}.summihist.csv ${key}.mi.adj
 	"""
 }
-
-Channel
-// Collect all *.summi.hist.csv files to determine optimal SumMI	
-	.from summihistogram
-	.collect()
-	.set { allsummihist }
 
 process OptimalSumMI {
 	// Analyze MI histograms to find the optimal MI threshold
 	executor "local"
 
 	input:
-	val allsummihist from allsummihist
+	file allsummihist from summihist.collect()
 	
 	output:
 	file("optimal-summi.csv") into bestsummi
 	file("optimal-summi.csv") into thresholds3
 
 	"""
-#!/bin/bash
-genereptools.py summifilter "${allsummihist}"
+	#!/bin/bash
+
+	LIMITS=`genereptools.py limits *.summihist.csv`
+	echo Histogram limits: \$LIMITS
+	for hist in *.summihist.csv;
+	do
+	  PREFIX=\${hist%.summihist.csv}
+	  apple.py histogram -n 1000 -s -r \$LIMITS -o \${PREFIX}.summihist2.csv \${PREFIX}.mi.adj
+	done
+
+	genereptools.py summifilter *.summihist2.csv
 	"""
-
-// #!/usr/bin/env python
-// import genereputils
-// F = genereputils.GRFilterSumMI(None)
-// F.runNF("${allsummihist}")
-
 }
 
 process FilterBySumMI {
@@ -283,27 +277,22 @@ process FilterBySumMI {
 	file(optsummi) from bestsummi
 	
 	output:
-	tuple val(key), file("${key}.summi.adj"), file("${key}.final.hist.csv") into filterFinal
+	tuple val(key), file("${key}.summi.adj"), file("${key}.finalhist.csv") into filterFinal
 	file("${key}.summi.adj") into adjstats3
 
 	"""
 	#!/bin/bash
 	summi=`grep OptSumMI ${optsummi} | cut -f 2`
 	apple.py filter -t -o ${key}.summi.adj ${adj} \$summi
-	apple.py histogram -n 1000 -o ${key}.final.hist.csv ${key}.summi.adj
+	apple.py histogram -n 1000 -o ${key}.finalhist.csv ${key}.summi.adj
 	cp ${key}.summi.adj ${params.resultsdir}
 	"""
 }
 
-Channel
-	.from filterFinal
-	.collect()
-	.set { finaladjs }
-
 process FilterFinal {
 
 	input:
-	val(allfinaladjs) from finaladjs
+	val(allfinaladjs) from filterFinal.collect()
 
 	output:
 	file("${params.label}.conn.csv") into connections
@@ -312,7 +301,7 @@ process FilterFinal {
 	#!/bin/bash
 
 	res=${params.resultsdir}
-	apple.py stats \$res/*.supp.adj \$res/*.mi.adj \$res/*.summi.adj > \$res/adj-stats.csv
+	(cd \${res}; apple.py stats *.supp.adj *.mi.adj *.summi.adj > adj-stats.csv)
 
 	listToTable.py "${allfinaladjs}" | sort > ADJS
 	realadj=`grep ^real ADJS | cut -f 2`

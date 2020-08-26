@@ -252,9 +252,6 @@ class SuppFilter(object):
         real = None
         shuffled = []
 
-        ## HACK to parse "[a, b, c]" into a proper list of strings.
-        countfiles = [p.strip() for p in countfiles.strip("[]").split(",")]
-
         for c in countfiles:
             filename = os.path.split(c)[1]
             if filename.startswith("real"):
@@ -263,7 +260,7 @@ class SuppFilter(object):
                 shuffled.append(c)
         for sh in shuffled:
             shname = os.path.split(sh)[1].split(".")[0]
-            outfile = "real.vs.{}.support.csv".format(shname)
+            outfile = "real_vs_{}.support.csv".format(shname)
             supp = compare_mi_histograms(outfile, real, sh, maxv=nrounds+1)
             sumsupp += supp[1]
             sumfpr += supp[2]
@@ -285,7 +282,7 @@ class MIFilter(object):
         shuffled = []
 
         ## HACK to parse "[a, b, c]" into a proper list of strings.
-        mifiles = [p.strip() for p in mifiles.strip("[]").split(",")]
+        ## mifiles = [p.strip() for p in mifiles.strip("[]").split(",")]
 
         for c in mifiles:
             filename = os.path.split(c)[1]
@@ -295,7 +292,7 @@ class MIFilter(object):
                 shuffled.append(c)
         for sh in shuffled:
             shname = os.path.split(sh)[1].split(".")[0]
-            outfile = "real.vs.{}.mi.hist.csv".format(shname)
+            outfile = "real_vs_{}.mihist.csv".format(shname)
             mi = compare_mi_histograms(outfile, real, sh)
             sum += mi[1]
             sumfpr += mi[2]
@@ -316,7 +313,7 @@ class SumMIFilter(object):
         shuffled = []
         
         ## HACK to parse "[a, b, c]" into a proper list of strings.
-        summifiles = [p.strip() for p in summifiles.strip("[]").split(",")]
+        ## summifiles = [p.strip() for p in summifiles.strip("[]").split(",")]
 
         for c in summifiles:
             filename = os.path.split(c)[1]
@@ -326,7 +323,7 @@ class SumMIFilter(object):
                 shuffled.append(c)
         for sh in shuffled:
             shname = os.path.split(sh)[1].split(".")[0]
-            outfile = "real.vs.{}.summi.hist.csv".format(shname)
+            outfile = "real_vs_{}.summihist.csv".format(shname)
             summi = compare_mi_histograms(outfile, real, sh)
             sum += summi[1]
             sumfpr += summi[2]
@@ -338,6 +335,22 @@ class SumMIFilter(object):
             with open("optimal-summi.csv", "w") as out:
                 out.write("OptSumMI\t{}\nFPRSumMI\t{}\n".format(optsummi, fprsummi))
 
+class HistLimits(object):
+
+    def run(self, histfiles):
+        histfiles = [p.strip() for p in histfiles.strip("[]").split(",")]
+        hmin = np.inf
+        hmax = 0
+        for hf in histfiles:
+            with open(hf, "r") as f:
+                c = csv.reader(f, delimiter='\t')
+                for line in c:
+                    mi = float(line[0])
+                    if mi < hmin:
+                        hmin = mi
+                    if mi > hmax:
+                        hmax = mi
+        sys.stdout.write("{} {}\n".format(hmin, hmax))
 
 if __name__ == "__main__":
     cmd = sys.argv[1]
@@ -349,8 +362,10 @@ if __name__ == "__main__":
     elif cmd == "zscore":
         ZScore().run(args[0], args[1])
     elif cmd == "suppfilter":
-        SuppFilter().run(int(args[0]), args[1])
+        SuppFilter().run(int(args[0]), args[1:])
     elif cmd == "mifilter":
-        MIFilter().run(args[0])
+        MIFilter().run(args)
     elif cmd == "summifilter":
-        SumMIFilter().run(args[0])
+        SumMIFilter().run(args)
+    elif cmd == "limits":
+        HistLimits().run(args[0])
